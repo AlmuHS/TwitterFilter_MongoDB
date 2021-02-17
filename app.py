@@ -12,7 +12,7 @@ import mongodb_manager as MDBMan
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5 import QtWebEngineWidgets
 from PyQt5.QtCore import QDate, QTime, QDateTime, Qt
-from PyQt5.QtWidgets import QWidget, QApplication, QMainWindow, QHBoxLayout
+from PyQt5.QtWidgets import QWidget, QApplication, QMainWindow, QHBoxLayout, QButtonGroup
 import sys
 import re
 import time
@@ -41,18 +41,25 @@ class Ui_MainWindow(QWidget):
         self.collections_label = QtWidgets.QLabel(self.centralwidget)
         self.collections_label.setGeometry(QtCore.QRect(50, 50, 91, 19))
         self.collections_label.setObjectName("collections_label")
-        self.daterange_checkBox = QtWidgets.QRadioButton(self.centralwidget)
-        self.daterange_checkBox.setGeometry(QtCore.QRect(150, 190, 131, 25))
-        self.daterange_checkBox.setObjectName("daterange_checkBox")
+
+        self.daterange_RadioButton = QtWidgets.QRadioButton(self.centralwidget)
+        self.daterange_RadioButton.setGeometry(QtCore.QRect(150, 190, 131, 25))
+        self.daterange_RadioButton.setObjectName("daterange_checkBox")
         self.kwplainTextEdit = QtWidgets.QPlainTextEdit(self.centralwidget)
         self.kwplainTextEdit.setGeometry(QtCore.QRect(150, 150, 171, 31))
         self.kwplainTextEdit.setObjectName("kwplainTextEdit")
         self.keywords_label = QtWidgets.QLabel(self.centralwidget)
         self.keywords_label.setGeometry(QtCore.QRect(40, 160, 101, 19))
         self.keywords_label.setObjectName("keywords_label")
-        self.date_checkBox = QtWidgets.QRadioButton(self.centralwidget)
-        self.date_checkBox.setGeometry(QtCore.QRect(150, 230, 121, 25))
-        self.date_checkBox.setObjectName("date_checkBox")
+        self.date_RadioButton = QtWidgets.QRadioButton(self.centralwidget)
+        self.date_RadioButton.setGeometry(QtCore.QRect(150, 230, 121, 25))
+        self.date_RadioButton.setObjectName("date_checkBox")
+
+        #layout = QHBoxLayout()
+        self.group_rb = QButtonGroup()
+        self.group_rb.addButton(self.date_RadioButton)
+        self.group_rb.addButton(self.daterange_RadioButton)
+
         self.user_checkBox = QtWidgets.QCheckBox(self.centralwidget)
         self.user_checkBox.setGeometry(QtCore.QRect(150, 270, 92, 25))
         self.user_checkBox.setObjectName("user_checkBox")
@@ -125,10 +132,10 @@ class Ui_MainWindow(QWidget):
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.search_pushButton.setText(_translate("MainWindow", "Buscar"))
         self.collections_label.setText(_translate("MainWindow", "Colecciones"))
-        self.daterange_checkBox.setText(
+        self.daterange_RadioButton.setText(
             _translate("MainWindow", "Rango de fechas"))
         self.keywords_label.setText(_translate("MainWindow", "Palabras clave"))
-        self.date_checkBox.setText(_translate("MainWindow", "Fecha exacta"))
+        self.date_RadioButton.setText(_translate("MainWindow", "Fecha exacta"))
         self.user_checkBox.setText(_translate("MainWindow", "Usuario"))
         self.hashtag_checkBox.setText(_translate("MainWindow", "Hashtag"))
         self.noRT_checkBox.setText(_translate("MainWindow", "Descartar RT"))
@@ -206,6 +213,12 @@ class MainWindow(QMainWindow):
 
         return query_col
 
+    def __disable_radiobuttons(self):
+        self.ui.group_rb.setExclusive(False)
+        self.ui.date_RadioButton.setChecked(False)
+        self.ui.daterange_RadioButton.setChecked(False)
+        self.ui.group_rb.setExclusive(True)
+
     '''
     Remove all temporary collections from the database
     '''
@@ -213,7 +226,8 @@ class MainWindow(QMainWindow):
     def __remove_temporary_collections(self, collection_name: str):
 
         collection_list = self.db_manager.show_collections_list()
-        suffix_list = ["keywords", "daterange", "user", "hashtag", "nort"]
+        suffix_list = ["keywords", "date",
+                       "daterange", "user", "hashtag", "nort"]
 
         words_re = re.compile("|".join(suffix_list))
 
@@ -258,7 +272,7 @@ class MainWindow(QMainWindow):
             query_col = self.__update_query_collection(col_name, docs)
 
         # If the last query got any document, and the user enable daterange filter, filter again over the temporary collection
-        if docs.count() > 0 and self.ui.daterange_checkBox.isChecked():
+        if docs.count() > 0 and self.ui.daterange_RadioButton.isChecked():
 
             # Read start and end date from the interface
             start_date = self.ui.dateEdit_start.date().toString("dd-MM-yyyy")
@@ -275,7 +289,7 @@ class MainWindow(QMainWindow):
                     col_name, docs)
 
         # If the user enable exact date filter instead daterange filter, filter again over the temporary collection
-        elif docs.count() > 0 and self.ui.date_checkBox.isChecked():
+        elif docs.count() > 0 and self.ui.date_RadioButton.isChecked():
 
             # Read date from the interface
             date = self.ui.dateEdit_exact.date().toString("dd-MM-yyyy")
@@ -354,6 +368,9 @@ class MainWindow(QMainWindow):
 
         # Update combobox with the new collections
         self._update_col_ComboBox()
+
+        # Uncheck radiobuttons
+        self.__disable_radiobuttons()
 
 
 if __name__ == "__main__":
