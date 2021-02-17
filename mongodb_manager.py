@@ -1,5 +1,6 @@
 import json
 from datetime import datetime, timedelta
+import time
 
 import pymongo
 from pymongo import MongoClient
@@ -391,7 +392,7 @@ class CollectionStatistics:
 
 if __name__ == "__main__":
 
-    collection_name = "twitter_josejuan_filtered"
+    collection_name = "twitter_examenes"
 
     # create_index_in_collection("twitter_examenes", "full_text")
     # results = find_docs_by_keywords("twitter_examenes", ["examen", "parcial"])
@@ -443,4 +444,30 @@ if __name__ == "__main__":
 
     docs = col_query.find_docs_no_retweet()
     print(docs.count())
-    #db_manager.load_collection_from_bson(docs, "arduino_comunicado_oficial")
+
+    col_manager = db_manager.load_collection_from_bson(
+        docs, "twitter_examenes_filtrado")
+
+    time.sleep(1)
+
+    print(col_manager.get_lenght())
+
+    col_query = col_manager.get_query()
+    col_manager.create_text_index("full_text")
+
+    docs = col_query.find_docs_by_keywords("examenes")
+    print(docs.count())
+
+    col_manager = db_manager.load_collection_from_bson(
+        docs, "twitter_examenes_filtrado2")
+
+    print(docs.count())
+
+    col_query = col_manager.get_query()
+
+    db_manager.remove_collection("twitter_examenes_filtrado2")
+    db_manager.remove_collection("twitter_examenes_filtrado")
+
+    time.sleep(1)
+
+    print(db_manager.show_collections_list())

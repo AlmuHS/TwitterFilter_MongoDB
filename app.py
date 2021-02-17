@@ -171,9 +171,10 @@ class MainWindow(QMainWindow):
         self.ui.results_TextBrowser.setText(stats_str)
 
     def __update_query_collection(self, collection_name: str, docs):
-        self.db_manager.remove_collection(collection_name)
         col_manager = self.db_manager.load_collection_from_bson(
             docs, collection_name)
+
+        time.sleep(1)
 
         if not col_manager.check_text_index("full_text"):
             col_manager.create_text_index("full_text")
@@ -181,6 +182,34 @@ class MainWindow(QMainWindow):
         query_col = col_manager.get_query()
 
         return query_col
+
+    def __remove_temporary_collections(self, collection_name: str):
+        collection_list = self.db_manager.show_collections_list()
+
+        col_name = f"{collection_name}_keywords"
+        if col_name in collection_list:
+            self.db_manager.remove_collection(col_name)
+
+        col_name = f"{collection_name}_daterange"
+        if col_name in collection_list:
+            self.db_manager.remove_collection(col_name)
+
+        col_name = f"{collection_name}_date"
+        if col_name in collection_list:
+            self.db_manager.remove_collection(col_name)
+
+        col_name = f"{collection_name}_user"
+        if col_name in collection_list:
+            self.db_manager.remove_collection(col_name)
+
+        col_name = f"{collection_name}_hashtag"
+        if col_name in collection_list:
+            self.db_manager.remove_collection(col_name)
+
+        col_name = f"{collection_name}_nort"
+
+        if col_name in collection_list:
+            self.db_manager.remove_collection(col_name)
 
     def _filter_tweets(self):
         collection = self.ui.collection_comboBox.currentText()
@@ -194,52 +223,73 @@ class MainWindow(QMainWindow):
         collection_name = f"{collection}_filtered"
 
         if docs.count() > 0:
-            query_col = self.__update_query_collection(collection_name, docs)
+            col_name = f"{collection_name}_keywords"
+            query_col = self.__update_query_collection(col_name, docs)
 
-        if self.ui.daterange_checkBox.isChecked():
+        if docs.count() > 0 and self.ui.daterange_checkBox.isChecked():
             start_date = self.ui.dateEdit_start.date().toString("dd-MM-yyyy")
             end_date = self.ui.dateEdit_end.date().toString("dd-MM-yyyy")
 
             docs = query_col.find_docs_by_date_range(start_date, end_date)
 
+            col_name = f"{collection_name}_daterange"
+
             if docs.count() > 0:
                 query_col = self.__update_query_collection(
-                    collection_name, docs)
+                    col_name, docs)
 
-        elif self.ui.date_checkBox.isChecked():
+        elif docs.count() > 0 and self.ui.date_checkBox.isChecked():
             date = self.ui.dateEdit_exact.date().toString("dd-MM-yyyy")
             docs = query_col.find_docs_by_date(date)
 
+            col_name = f"{collection_name}_date"
+
             if docs.count() > 0:
                 query_col = self.__update_query_collection(
-                    collection_name, docs)
+                    col_name, docs)
 
-        if self.ui.user_checkBox.isChecked():
+        if docs.count() > 0 and self.ui.user_checkBox.isChecked():
             user = self.ui.user_plainTextEdit.toPlainText()
             docs = query_col.find_docs_by_user(user)
 
+            col_name = f"{collection_name}_user"
+
             if docs.count() > 0:
                 query_col = self.__update_query_collection(
-                    collection_name, docs)
+                    col_name, docs)
 
-        if self.ui.hashtag_checkBox.isChecked():
+        if docs.count() > 0 and self.ui.hashtag_checkBox.isChecked():
             hashtag = self.ui.hashtag_plainTextEdit.toPlainText()
             docs = query_col.find_docs_by_hashtag(hashtag)
 
+            col_name = f"{collection_name}_hashtag"
+
             if docs.count() > 0:
                 query_col = self.__update_query_collection(
-                    collection_name, docs)
+                    col_name, docs)
 
-        if self.ui.noRT_checkBox.isChecked():
+        if docs.count() > 0 and self.ui.noRT_checkBox.isChecked():
             docs = query_col.find_docs_no_retweet()
 
+            col_name = f"{collection_name}_nort"
+
             if docs.count() > 0:
                 query_col = self.__update_query_collection(
-                    collection_name, docs)
+                    col_name, docs)
 
         if docs.count() > 0:
-            self.ui.status_label.setText("Success")
+            c_name = f"{collection}_filtered"
+
+            print(c_name)
+            colm = self.db_manager.load_collection_from_bson(docs, c_name)
+            time.sleep(1)
+            self.__remove_temporary_collections(collection)
+            time.sleep(1)
+
+            print(self.db_manager.show_collections_list())
+
             self._init_col_ComboBox()
+            self.ui.status_label.setText("Success")
         else:
             self.db_manager.remove_collection(collection_name)
             self.ui.status_label.setText("No results")
