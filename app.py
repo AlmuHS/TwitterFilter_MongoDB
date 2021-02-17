@@ -14,8 +14,8 @@ from PyQt5 import QtWebEngineWidgets
 from PyQt5.QtCore import QDate, QTime, QDateTime, Qt
 from PyQt5.QtWidgets import QWidget, QApplication, QMainWindow, QHBoxLayout
 import sys
-import time
 import re
+import time
 
 
 class Ui_MainWindow(QWidget):
@@ -247,7 +247,8 @@ class MainWindow(QMainWindow):
         docs = query_col.find_docs_by_keywords(keywords)
 
         # Set the destination collection's name
-        collection_name = f"{collection}_filtered"
+        timestamp = time.time()
+        collection_name = f"{collection}_filtered_{timestamp}"
 
         # If the query results any document, store them in a temporary collection
         if docs.count() > 0:
@@ -335,16 +336,10 @@ class MainWindow(QMainWindow):
 
         # If the last query got any results, remove all temporary collection, and store the latest results in a new collection
         if docs.count() > 0:
-            print(docs)
-
-            # Final collection name
-            final_collection_name = f"{collection}_filtered"
-
             # Load documents in the final collection
             col_manager = query_col.clone_collection_to_another(
-                final_collection_name)
-            self.__update_query_collection(final_collection_name, docs)
-            print(self.db_manager.show_collections_list())
+                collection_name)
+            self.__update_query_collection(collection_name, docs)
 
             # Show sucess status in the interface
             self.ui.status_label.setText("Success")
