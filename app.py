@@ -213,11 +213,27 @@ class MainWindow(QMainWindow):
 
         return query_col
 
-    def __disable_radiobuttons(self):
+    def _disable_radiobuttons(self):
         self.ui.group_rb.setExclusive(False)
         self.ui.date_RadioButton.setChecked(False)
         self.ui.daterange_RadioButton.setChecked(False)
         self.ui.group_rb.setExclusive(True)
+
+    def _disable_checkboxes(self):
+        self.ui.user_checkBox.setChecked(False)
+        self.ui.hashtag_checkBox.setChecked(False)
+        self.ui.noRT_checkBox.setChecked(False)
+
+    def _clean_textedit(self):
+        self.ui.user_plainTextEdit.setPlainText("")
+        self.ui.hashtag_plainTextEdit.setPlainText("")
+        self.ui.kwplainTextEdit.setPlainText("")
+
+    def _update_ui(self):
+        self._update_col_ComboBox()
+        self._disable_radiobuttons()
+        self._disable_checkboxes()
+        self._clean_textedit()
 
     '''
     Remove all temporary collections from the database
@@ -370,7 +386,7 @@ class MainWindow(QMainWindow):
         self._update_col_ComboBox()
 
         # Uncheck radiobuttons
-        self.__disable_radiobuttons()
+        self._update_ui()
 
 
 if __name__ == "__main__":
