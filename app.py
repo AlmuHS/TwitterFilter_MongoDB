@@ -148,40 +148,70 @@ class MainWindow(QMainWindow):
         self.ui.setupUi(self)
 
         self._connect()
-        self._init_col_ComboBox()
+        self._update_col_ComboBox()
 
-        self.ui.stats_pushButton.clicked.connect(self._get_col_stats)
+        self.ui.stats_pushButton.clicked.connect(self._get_collection_stats)
         self.ui.search_pushButton.clicked.connect(self._filter_tweets)
 
     def _connect(self):
         self.db_manager = MDBMan.DBManager('twitter_downloads')
 
-    def _init_col_ComboBox(self):
+    '''
+    Update combobox contents with the new lists of collections from database
+    '''
+
+    def _update_col_ComboBox(self):
+
+        # Read list of collections existents in the database
         col_list = self.db_manager.show_collections_list()
+
+        # Remove all contents of combobox
         self.ui.collection_comboBox.clear()
+
+        # Fill combobox with the new list of collections
         self.ui.collection_comboBox.addItems(col_list)
 
-    def _get_col_stats(self):
+    '''
+    Get all statistics of a collection, and show it in the interface
+    '''
+
+    def _get_collection_stats(self):
+
+        # Read collection name from the interface
         collection = self.ui.collection_comboBox.currentText()
 
+        # Get collection stats tool
         col_manager = self.db_manager.get_collection_manager(collection)
         stats = col_manager.get_stats()
+
+        # Get string with all stats results
         stats_str = stats.show_all_stats()
 
+        # Show text in the interface
         self.ui.results_TextBrowser.setText(stats_str)
 
+    '''
+    Create a new collection and prepare it for send queries
+    '''
+
     def __update_query_collection(self, collection_name: str, docs):
+
+        # Load data in a new temporary collection
         col_manager = self.db_manager.load_collection_from_bson(
             docs, collection_name)
 
-        time.sleep(1)
-
+        # If the collection has not a text index, create it
         if not col_manager.check_text_index("full_text"):
             col_manager.create_text_index("full_text")
 
+        # Get query tool from the new collection
         query_col = col_manager.get_query()
 
         return query_col
+
+    '''
+    Remove all temporary collections from the database
+    '''
 
     def __remove_temporary_collections(self, collection_name: str):
         collection_list = self.db_manager.show_collections_list()
@@ -211,87 +241,136 @@ class MainWindow(QMainWindow):
         if col_name in collection_list:
             self.db_manager.remove_collection(col_name)
 
-    def _filter_tweets(self):
-        collection = self.ui.collection_comboBox.currentText()
-        col_manager = self.db_manager.get_collection_manager(collection)
-        col_manager.create_text_index("full_text")
+    '''
+    Filter a subset of tweets, stored in a MongoDB database, using a set of filters with different cryteria
+    '''
 
+    def _filter_tweets(self):
+
+        # Read collection name
+        collection = self.ui.collection_comboBox.currentText()
+
+        # Access to collection
+        col_manager = self.db_manager.get_collection_manager(collection)
+
+        # If the collection has not a text index, create a new text index in the full_text tweet field
+        if not col_manager.check_text_index("full_text"):
+            col_manager.create_text_index("full_text")
+
+        # Read keywords to filter from the interface (obligatory)
         keywords = self.ui.kwplainTextEdit.toPlainText()
+
+        # Get querytool for this collection
         query_col = col_manager.get_query()
 
+        # Filter documents using the keywords
         docs = query_col.find_docs_by_keywords(keywords)
+
+        # Set the destination collection's name
         collection_name = f"{collection}_filtered"
 
+        # If the query results any document, store them in a temporary collection
         if docs.count() > 0:
             col_name = f"{collection_name}_keywords"
             query_col = self.__update_query_collection(col_name, docs)
 
+        # If the last query got any document, and the user enable daterange filter, filter again over the temporary collection
         if docs.count() > 0 and self.ui.daterange_checkBox.isChecked():
+
+            # Read start and end date from the interface
             start_date = self.ui.dateEdit_start.date().toString("dd-MM-yyyy")
             end_date = self.ui.dateEdit_end.date().toString("dd-MM-yyyy")
 
+            # Filter documents by date range from the temporary collection, stored in the database
             docs = query_col.find_docs_by_date_range(start_date, end_date)
 
+            # If the query get any results, store them in a new temporary collection
             col_name = f"{collection_name}_daterange"
-
             if docs.count() > 0:
                 query_col = self.__update_query_collection(
                     col_name, docs)
 
+        # If the user enable exact date filter instead daterange filter, filter again over the temporary collection
         elif docs.count() > 0 and self.ui.date_checkBox.isChecked():
+
+            # Read date from the interface
             date = self.ui.dateEdit_exact.date().toString("dd-MM-yyyy")
+
+            # Filter documents by exact date from the temporary collection, stored in the database
             docs = query_col.find_docs_by_date(date)
 
+            # If the query get any results, store them in a new temporary collection
             col_name = f"{collection_name}_date"
-
             if docs.count() > 0:
                 query_col = self.__update_query_collection(
                     col_name, docs)
 
+        # If the last query got any results, and user enable filter by user, filter again over the temporary collection
         if docs.count() > 0 and self.ui.user_checkBox.isChecked():
+
+            # Read username to filter from the interface
             user = self.ui.user_plainTextEdit.toPlainText()
+
+            # Filter documents using username
             docs = query_col.find_docs_by_user(user)
 
+            # if the query results any document, store them in a new temporary collection
             col_name = f"{collection_name}_user"
-
             if docs.count() > 0:
                 query_col = self.__update_query_collection(
                     col_name, docs)
 
+        # If the last query got any results, and the user enable filter by hashtag, filter again over the temporary collection
         if docs.count() > 0 and self.ui.hashtag_checkBox.isChecked():
+
+            # Read hashtag to filter from the interface
             hashtag = self.ui.hashtag_plainTextEdit.toPlainText()
+
+            # Filter documents by this hashtag
             docs = query_col.find_docs_by_hashtag(hashtag)
 
+            # If the query got any result, store them in a new temporary collection
             col_name = f"{collection_name}_hashtag"
-
             if docs.count() > 0:
                 query_col = self.__update_query_collection(
                     col_name, docs)
 
+        # If the last query got any results, and user enable filter by noRT, filter again over the temporary collection
         if docs.count() > 0 and self.ui.noRT_checkBox.isChecked():
+
+            # Filter documents from temporary collection, discarting retweets
             docs = query_col.find_docs_no_retweet()
 
+            # if the query get any results, store them in a new temporary collection
             col_name = f"{collection_name}_nort"
-
             if docs.count() > 0:
                 query_col = self.__update_query_collection(
                     col_name, docs)
 
+        # If the last query got any results, remove all temporary collection, and store the latest results in a new collection
         if docs.count() > 0:
-            c_name = f"{collection}_filtered"
 
-            print(c_name)
-            colm = self.db_manager.load_collection_from_bson(docs, c_name)
-            time.sleep(1)
+            # Final collection name
+            final_collection_name = f"{collection}_filtered"
+
+            # Load documents in the final collection
+            colm = self.db_manager.load_collection_from_bson(
+                docs, final_collection_name)
+
+            # Remove all temporary collections
             self.__remove_temporary_collections(collection)
-            time.sleep(1)
 
             print(self.db_manager.show_collections_list())
 
-            self._init_col_ComboBox()
+            # Update combobox with the new collections
+            self._update_col_ComboBox()
+
+            # Show sucess status in the interface
             self.ui.status_label.setText("Success")
+
+        # If the last query got zero results, remove all temporary collections, and show message "No results" in the interface
         else:
-            self.db_manager.remove_collection(collection_name)
+            self.__remove_temporary_collections(collection)
             self.ui.status_label.setText("No results")
 
 
