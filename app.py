@@ -36,7 +36,7 @@ class Ui_MainWindow(QWidget):
         self.search_pushButton.setGeometry(QtCore.QRect(150, 400, 88, 27))
         self.search_pushButton.setObjectName("pushButton")
         self.collection_comboBox = QtWidgets.QComboBox(self.centralwidget)
-        self.collection_comboBox.setGeometry(QtCore.QRect(140, 50, 191, 27))
+        self.collection_comboBox.setGeometry(QtCore.QRect(140, 50, 215, 27))
         self.collection_comboBox.setObjectName("collection_comboBox")
         self.collections_label = QtWidgets.QLabel(self.centralwidget)
         self.collections_label.setGeometry(QtCore.QRect(50, 50, 91, 19))
@@ -81,11 +81,11 @@ class Ui_MainWindow(QWidget):
         self.dateEdit_exact.setObjectName("dateEdit_exact")
         self.dateEdit_exact.setDisplayFormat("dd/MM/yyyy")
         self.user_plainTextEdit = QtWidgets.QPlainTextEdit(self.centralwidget)
-        self.user_plainTextEdit.setGeometry(QtCore.QRect(380, 270, 104, 31))
+        self.user_plainTextEdit.setGeometry(QtCore.QRect(380, 270, 180, 31))
         self.user_plainTextEdit.setObjectName("user_plainTextEdit")
         self.hashtag_plainTextEdit = QtWidgets.QPlainTextEdit(
             self.centralwidget)
-        self.hashtag_plainTextEdit.setGeometry(QtCore.QRect(380, 310, 104, 31))
+        self.hashtag_plainTextEdit.setGeometry(QtCore.QRect(380, 310, 180, 31))
         self.hashtag_plainTextEdit.setObjectName("hashtag_plainTextEdit")
         self.stats_pushButton = QtWidgets.QPushButton(self.centralwidget)
         self.stats_pushButton.setGeometry(QtCore.QRect(360, 50, 151, 27))
@@ -226,6 +226,7 @@ class MainWindow(QMainWindow):
     '''
 
     def _filter_tweets(self):
+        self.ui.status_label.setText("Procesando")
 
         # Read collection name
         collection = self.ui.collection_comboBox.currentText()
@@ -342,11 +343,11 @@ class MainWindow(QMainWindow):
             self.__update_query_collection(collection_name, docs)
 
             # Show sucess status in the interface
-            self.ui.status_label.setText("Success")
+            self.ui.status_label.setText("Exito")
 
         # If the last query got zero results, remove all temporary collections, and show message "No results" in the interface
         else:
-            self.ui.status_label.setText("No results")
+            self.ui.status_label.setText("Sin resultados")
 
         # Remove all temporary collections
         self.__remove_temporary_collections(collection)
