@@ -2,6 +2,8 @@ import pymongo
 import json
 from datetime import datetime, timedelta
 
+import mongodb_manager as MDBMan
+
 
 class CollectionManager:
     def __init__(self, collection: pymongo.collection):
@@ -31,86 +33,107 @@ class CollectionManager:
     def get_lenght(self):
         return self.collection.count()
 
+    def remove_collection(self):
+        response = self.collection.drop()
+        print(response)
+
 
 class CollectionQuery:
     def __init__(self, collection: pymongo.collection):
         self.collection = collection
+        self.docs = None
 
     def find_docs_by_keywords(self, keywords: str):
         # keywords_str = '.'.join([str(word) for word in keywords])
 
-        docs = self.collection.find(
+        self.docs = self.collection.find(
             {"$text": {"$search": keywords}})
 
-        return docs
+        return self.docs
 
     def find_docs_by_exact_phrase(self, phrase: str):
         query = f'\\"{phrase}\\"'
         # query = r'\"Comunicado Oficial\"'
 
-        docs = self.collection.find(
+        self.docs = self.collection.find(
             {"$text": {"$search": query}})
 
-        return docs
+        return self.docs
 
     def find_docs_by_date_range(self, date_start: str, date_end: str):
         datestart_obj = datetime.strptime(date_start, '%d-%m-%Y')
         dateend_obj = datetime.strptime(date_end, '%d-%m-%Y')
 
-        docs = self.collection.find(
+        self.docs = self.collection.find(
             {"created_at": {'$gte': datestart_obj, '$lte': dateend_obj}})
 
-        return docs
+        return self.docs
 
     def find_docs_by_date(self, date: str):
         datetime_obj = datetime.strptime(date, '%d-%m-%Y')
         next_day_obj = datetime_obj + timedelta(days=1)
 
-        docs = self.collection.find(
+        self.docs = self.collection.find(
             {"created_at": {'$gte': datetime_obj, '$lt': next_day_obj}})
 
-        return docs
+        return self.docs
 
     def find_docs_by_keywords_and_date(self, keywords: str, date: str):
         datetime_obj = datetime.strptime(date, '%d-%m-%Y')
         next_day_obj = datetime_obj + timedelta(days=1)
 
-        docs = self.collection.aggregate([
+        self.docs = self.collection.aggregate([
             {'$match': {
                 "created_at": {'$gte': datetime_obj, '$lte': next_day_obj},
                 "$text": {"$search": keywords}
             }}
         ])
 
-        return docs
+        return self.docs
 
     def find_docs_by_keywords_and_date_range(self, keywords: str, date_start: str, date_end: str):
         datestart_obj = datetime.strptime(date_start, '%d-%m-%Y')
         dateend_obj = datetime.strptime(date_end, '%d-%m-%Y')
 
-        docs = self.collection.aggregate([
+        self.docs = self.collection.aggregate([
             {'$match': {
                 "created_at": {'$gte': datestart_obj, '$lte': dateend_obj},
                 "$text": {"$search": keywords}
             }}
         ])
 
-        return docs
+        return self.docs
 
     def find_docs_by_user(self, username: str):
-        docs = self.collection.find({"user.screen_name": username})
+        self.docs = self.collection.find({"user.screen_name": username})
 
-        return docs
+        return self.docs
 
     def find_docs_by_hashtag(self, hashtag: str):
-        docs = self.collection.find({"entities.hashtags.text": hashtag})
+        self.docs = self.collection.find({"entities.hashtags.text": hashtag})
 
-        return docs
+        return self.docs
 
     def find_docs_no_retweet(self):
-        docs = self.collection.find({"retweeted_status": {'$exists': 0}})
+        self.docs = self.collection.find({"retweeted_status": {'$exists': 0}})
 
-        return docs
+        return self.docs
+
+    def store_results_in_collection(self, collection_name: str):
+        db_name = self.collection.database.name
+        db_manager = MDBMan.DBManager(db_name)
+
+        col_manager = db_manager.load_collection_from_bson(
+            self.docs, collection_name)
+
+        return col_manager
+
+    def clone_collection_to_another(self, collection_name):
+        self.docs = self.collection.find()
+
+        col_manager = self.store_results_in_collection(collection_name)
+
+        return col_manager
 
 
 class CollectionStatistics:

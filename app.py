@@ -195,10 +195,7 @@ class MainWindow(QMainWindow):
     '''
 
     def __update_query_collection(self, collection_name: str, docs):
-
-        # Load data in a new temporary collection
-        col_manager = self.db_manager.load_collection_from_bson(
-            docs, collection_name)
+        col_manager = self.db_manager.get_collection_manager(collection_name)
 
         # If the collection has not a text index, create it
         if not col_manager.check_text_index("full_text"):
@@ -272,6 +269,7 @@ class MainWindow(QMainWindow):
         # If the query results any document, store them in a temporary collection
         if docs.count() > 0:
             col_name = f"{collection_name}_keywords"
+            col_manager = query_col.store_results_in_collection(col_name)
             query_col = self.__update_query_collection(col_name, docs)
 
         # If the last query got any document, and the user enable daterange filter, filter again over the temporary collection
@@ -287,6 +285,7 @@ class MainWindow(QMainWindow):
             # If the query get any results, store them in a new temporary collection
             col_name = f"{collection_name}_daterange"
             if docs.count() > 0:
+                col_manager = query_col.store_results_in_collection(col_name)
                 query_col = self.__update_query_collection(
                     col_name, docs)
 
@@ -302,6 +301,7 @@ class MainWindow(QMainWindow):
             # If the query get any results, store them in a new temporary collection
             col_name = f"{collection_name}_date"
             if docs.count() > 0:
+                col_manager = query_col.store_results_in_collection(col_name)
                 query_col = self.__update_query_collection(
                     col_name, docs)
 
@@ -317,6 +317,7 @@ class MainWindow(QMainWindow):
             # if the query results any document, store them in a new temporary collection
             col_name = f"{collection_name}_user"
             if docs.count() > 0:
+                col_manager = query_col.store_results_in_collection(col_name)
                 query_col = self.__update_query_collection(
                     col_name, docs)
 
@@ -332,6 +333,7 @@ class MainWindow(QMainWindow):
             # If the query got any result, store them in a new temporary collection
             col_name = f"{collection_name}_hashtag"
             if docs.count() > 0:
+                col_manager = query_col.store_results_in_collection(col_name)
                 query_col = self.__update_query_collection(
                     col_name, docs)
 
@@ -344,22 +346,21 @@ class MainWindow(QMainWindow):
             # if the query get any results, store them in a new temporary collection
             col_name = f"{collection_name}_nort"
             if docs.count() > 0:
+                col_manager = query_col.store_results_in_collection(col_name)
                 query_col = self.__update_query_collection(
                     col_name, docs)
 
         # If the last query got any results, remove all temporary collection, and store the latest results in a new collection
         if docs.count() > 0:
+            print(docs)
 
             # Final collection name
             final_collection_name = f"{collection}_filtered"
 
             # Load documents in the final collection
-            colm = self.db_manager.load_collection_from_bson(
-                docs, final_collection_name)
-
-            # Remove all temporary collections
-            self.__remove_temporary_collections(collection)
-
+            col_manager = query_col.clone_collection_to_another(
+                final_collection_name)
+            self.__update_query_collection(final_collection_name, docs)
             print(self.db_manager.show_collections_list())
 
             # Update combobox with the new collections
@@ -370,8 +371,10 @@ class MainWindow(QMainWindow):
 
         # If the last query got zero results, remove all temporary collections, and show message "No results" in the interface
         else:
-            self.__remove_temporary_collections(collection)
             self.ui.status_label.setText("No results")
+
+        # Remove all temporary collections
+        self.__remove_temporary_collections(collection)
 
 
 if __name__ == "__main__":
