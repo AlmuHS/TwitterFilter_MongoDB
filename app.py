@@ -15,7 +15,7 @@ from PyQt5.QtCore import QDate, QTime, QDateTime, Qt
 from PyQt5.QtWidgets import QWidget, QApplication, QMainWindow, QHBoxLayout, QButtonGroup
 import sys
 import re
-import time
+from datetime import datetime
 
 
 class Ui_MainWindow(QWidget):
@@ -55,7 +55,6 @@ class Ui_MainWindow(QWidget):
         self.date_RadioButton.setGeometry(QtCore.QRect(150, 230, 121, 25))
         self.date_RadioButton.setObjectName("date_checkBox")
 
-        #layout = QHBoxLayout()
         self.group_rb = QButtonGroup()
         self.group_rb.addButton(self.date_RadioButton)
         self.group_rb.addButton(self.daterange_RadioButton)
@@ -101,12 +100,6 @@ class Ui_MainWindow(QWidget):
         self.results_TextBrowser.setGeometry(QtCore.QRect(40, 490, 671, 271))
         self.results_TextBrowser.setText("")
         self.results_TextBrowser.setObjectName("results_label")
-
-        # self.horizontal_layout.addWidget(self.results_TextBrowser)
-
-        # self.results_TextBrowser.setSizePolicy(
-        #    QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
-
         self.status_label = QtWidgets.QLabel(self.centralwidget)
         self.status_label.setGeometry(QtCore.QRect(350, 400, 211, 31))
         font = QtGui.QFont()
@@ -198,7 +191,7 @@ class MainWindow(QMainWindow):
         self.ui.results_TextBrowser.setText(stats_str)
 
     '''
-    Create a new collection and prepare it for send queries
+    Prepare a new collection to send queries
     '''
 
     def __update_query_collection(self, collection_name: str, docs):
@@ -278,7 +271,7 @@ class MainWindow(QMainWindow):
         docs = query_col.find_docs_by_keywords(keywords)
 
         # Set the destination collection's name
-        timestamp = time.time()
+        timestamp = datetime.now()
         collection_name = f"{collection}_filtered_{timestamp}"
 
         # If the query results any document, store them in a temporary collection
