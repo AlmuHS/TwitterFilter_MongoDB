@@ -1,5 +1,4 @@
 import tweepy as tw
-from tweepy.parsers import JSONParser
 import json
 
 from twitter_keys import *

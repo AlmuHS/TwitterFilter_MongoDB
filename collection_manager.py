@@ -3,7 +3,6 @@ import json
 from datetime import datetime, timedelta
 
 from collection_query import CollectionQuery, CollectionStatistics
-import mongodb_manager as MDBMan
 
 
 class CollectionManager:
