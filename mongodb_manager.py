@@ -46,7 +46,7 @@ class DBManager:
 
         return col_manager
 
-    def load_collection_from_bson(self, docs, collection_name: str):
+    def load_collection_from_cursor(self, docs, collection_name: str):
         collection = self.db[collection_name]
 
         for doc in docs:
@@ -83,9 +83,10 @@ if __name__ == "__main__":
     # results = find_docs_by_date("twitter_examenes", '27-01-2021')
     db_manager = DBManager('twitter_downloads')
 
-    col_manager = db_manager.get_collection_manager(collection_name)
+    #col_manager = db_manager.get_collection_manager(collection_name)
 
-    print(col_manager.get_lenght())
+    col_manager = db_manager.load_collection_from_bson(
+        "colecciones_raw/examenes.txt", "examenes")
 
     col_query = col_manager.get_query()
     col_stats = col_manager.get_stats()
@@ -95,67 +96,19 @@ if __name__ == "__main__":
 
     print(col_manager.check_text_index("full_text"))
 
-    min_date, max_date = col_stats.get_download_period()
-
-    print(min_date)
-    print(max_date)
-
-    most_rt_text = col_stats.get_most_retweeted_text()
-    print(most_rt_text)
-
-    most_publish_users = col_stats.get_most_published_users()
-    print(most_publish_users)
-
-    most_refered_urls = col_stats.get_most_appears_urls()
-    print(most_refered_urls)
-
-    most_refered_hashtags = col_stats.get_most_appears_hashtags()
-    print(most_refered_hashtags)
-
-    most_refered_users = col_stats.get_most_mentioned_users()
-    print(most_refered_users)
-
-    hottest_minute = col_stats.get_hottest_minute()
-    print(hottest_minute)
-
-    print(db_manager.show_collections_list())
-
-    # docs = col_query.find_docs_by_keywords_and_date_range(
-    #     ["Oficial", "Comunicado"], "27-01-2021", "28-01-2021")
-
-    # for doc in docs:
-    #     print(doc['full_text'])
-
-    docs = col_query.find_docs_no_retweet()
-    print(docs.count())
-
-    col_manager = db_manager.load_collection_from_bson(
-        docs, "twitter_examenes_filtrado")
-
-    time.sleep(1)
-
-    print(col_manager.get_lenght())
-
     col_query = col_manager.get_query()
+    col_stats = col_manager.get_stats()
     col_manager.create_text_index("full_text")
 
-    docs = col_query.find_docs_by_keywords("examenes")
-    print(docs.count())
+    all_stats = col_stats.show_all_stats()
 
-    col_manager = db_manager.load_collection_from_bson(
-        docs, "twitter_examenes_filtrado2")
+    print(all_stats)
 
-    print(docs.count())
+    #docs = col_query.find_docs_by_keywords("examenes")
+    # print(docs.count())
 
-    col_query = col_manager.get_query()
-
-    db_manager.remove_collection("twitter_examenes_filtrado2")
-    db_manager.remove_collection("twitter_examenes_filtrado")
-
-    time.sleep(1)
-
-    db_manager.remove_collection("twitter_arduinos_filtered_nort")
-    db_manager.remove_collection("twitter_arduinos_filtered_keywords")
-    db_manager.remove_collection("twitter_arduinos_filtered_hashtag")
+    # db_manager.remove_collection("twitter_arduinos_filtered_nort")
+    # db_manager.remove_collection("twitter_arduinos_filtered_keywords")
+    # db_manager.remove_collection("twitter_arduinos_filtered_hashtag")
 
     print(db_manager.show_collections_list())
