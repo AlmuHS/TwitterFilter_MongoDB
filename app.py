@@ -35,6 +35,11 @@ class Ui_MainWindow(QWidget):
         self.search_pushButton = QtWidgets.QPushButton(self.centralwidget)
         self.search_pushButton.setGeometry(QtCore.QRect(150, 400, 88, 27))
         self.search_pushButton.setObjectName("pushButton")
+
+        self.reset_pushButton = QtWidgets.QPushButton(self.centralwidget)
+        self.reset_pushButton.setGeometry(QtCore.QRect(250, 400, 88, 27))
+        self.reset_pushButton.setObjectName("pushButton")
+
         self.collection_comboBox = QtWidgets.QComboBox(self.centralwidget)
         self.collection_comboBox.setGeometry(QtCore.QRect(140, 50, 215, 27))
         self.collection_comboBox.setObjectName("collection_comboBox")
@@ -101,7 +106,7 @@ class Ui_MainWindow(QWidget):
         self.results_TextBrowser.setText("")
         self.results_TextBrowser.setObjectName("results_label")
         self.status_label = QtWidgets.QLabel(self.centralwidget)
-        self.status_label.setGeometry(QtCore.QRect(350, 400, 211, 31))
+        self.status_label.setGeometry(QtCore.QRect(430, 400, 211, 31))
         font = QtGui.QFont()
         font.setBold(True)
         font.setItalic(True)
@@ -124,6 +129,7 @@ class Ui_MainWindow(QWidget):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.search_pushButton.setText(_translate("MainWindow", "Buscar"))
+        self.reset_pushButton.setText(_translate("MainWindow", "Reset"))
         self.collections_label.setText(_translate("MainWindow", "Colecciones"))
         self.daterange_RadioButton.setText(
             _translate("MainWindow", "Rango de fechas"))
@@ -152,6 +158,7 @@ class MainWindow(QMainWindow):
 
         self.ui.stats_pushButton.clicked.connect(self._get_collection_stats)
         self.ui.search_pushButton.clicked.connect(self._filter_tweets)
+        self.ui.reset_pushButton.clicked.connect(self._update_ui)
 
         self.ui.dateEdit_start.setMinimumDate(QDate(2006, 3, 1))
         self.ui.dateEdit_end.setMinimumDate(QDate(2006, 3, 1))
