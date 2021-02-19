@@ -2,8 +2,6 @@ import pymongo
 import json
 from datetime import datetime, timedelta
 
-import mongodb_manager as MDBMan
-
 
 class CollectionQuery:
     def __init__(self, collection: pymongo.collection):
@@ -85,23 +83,6 @@ class CollectionQuery:
         self.docs = self.collection.find({"retweeted_status": {'$exists': 0}})
 
         return self.docs
-
-    def store_results_in_collection(self, collection_name: str):
-        db_name = self.collection.database.name
-        db_manager = MDBMan.DBManager(db_name)
-
-        col_manager = db_manager.load_collection_from_cursor(
-            self.docs, collection_name)
-
-        return col_manager
-
-    def clone_collection_to_another(self, collection_name):
-        self.docs = self.collection.find()
-
-        col_manager = self.store_results_in_collection(collection_name)
-
-        return col_manager
-
 
 class CollectionStatistics:
     def __init__(self, collection: pymongo.collection):

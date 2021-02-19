@@ -71,6 +71,15 @@ class DBManager:
         response = self.db.drop_collection(collection_name)
         print(response)
 
+    def clone_collection_to_another(self, collection_src: str, collection_dest: str):
+        collection = self.db[collection_src]
+        docs = collection.find()
+
+        col_manager = self.load_collection_from_cursor(
+            docs, collection_dest)
+
+        return col_manager
+
 
 if __name__ == "__main__":
 

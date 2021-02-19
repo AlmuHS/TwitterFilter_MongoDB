@@ -2,7 +2,9 @@ import pymongo
 import json
 from datetime import datetime, timedelta
 
-from collection_query import *
+from collection_query import CollectionQuery, CollectionStatistics
+import mongodb_manager as MDBMan
+
 
 class CollectionManager:
     def __init__(self, collection: pymongo.collection):
@@ -11,10 +13,10 @@ class CollectionManager:
     def create_text_index(self, field: str):
         self.collection.create_index([(field, "text")])
 
-    def check_text_index(self, index_name: str):
+    def check_text_index(self, field: str):
         index_info = self.collection.index_information()
 
-        return (f'{index_name}_text' in index_info.keys())
+        return (f'{field}_text' in index_info.keys())
 
     def remove_all_index(self):
         self.collection.drop_indexes()
@@ -31,7 +33,3 @@ class CollectionManager:
 
     def get_lenght(self):
         return self.collection.count()
-
-    def remove_collection(self):
-        response = self.collection.drop()
-        print(response)

@@ -153,6 +153,10 @@ class MainWindow(QMainWindow):
         self.ui.stats_pushButton.clicked.connect(self._get_collection_stats)
         self.ui.search_pushButton.clicked.connect(self._filter_tweets)
 
+        self.ui.dateEdit_start.setMinimumDate(QDate(2006, 3, 1))
+        self.ui.dateEdit_end.setMinimumDate(QDate(2006, 3, 1))
+        self.ui.dateEdit_exact.setMinimumDate(QDate(2006, 3, 1))
+
     def _connect(self):
         self.db_manager = MDBMan.DBManager('twitter_downloads')
 
@@ -163,7 +167,7 @@ class MainWindow(QMainWindow):
     def _update_col_ComboBox(self):
 
         # Read list of collections existents in the database
-        col_list = self.db_manager.show_collections_list()
+        col_list = self.db_manager.get_collections_list()
 
         # Remove all contents of combobox
         self.ui.collection_comboBox.clear()
@@ -195,7 +199,8 @@ class MainWindow(QMainWindow):
     '''
 
     def __update_query_collection(self, collection_name: str, docs):
-        col_manager = self.db_manager.get_collection_manager(collection_name)
+        col_manager = self.db_manager.load_collection_from_cursor(
+            docs, collection_name)
 
         # If the collection has not a text index, create it
         if not col_manager.check_text_index("full_text"):
@@ -234,7 +239,7 @@ class MainWindow(QMainWindow):
 
     def __remove_temporary_collections(self, collection_name: str):
 
-        collection_list = self.db_manager.show_collections_list()
+        collection_list = self.db_manager.get_collections_list()
         suffix_list = ["keywords", "date",
                        "daterange", "user", "hashtag", "nort"]
 
@@ -277,7 +282,6 @@ class MainWindow(QMainWindow):
         # If the query results any document, store them in a temporary collection
         if docs.count() > 0:
             col_name = f"{collection_name}_keywords"
-            col_manager = query_col.store_results_in_collection(col_name)
             query_col = self.__update_query_collection(col_name, docs)
 
         # If the last query got any document, and the user enable daterange filter, filter again over the temporary collection
@@ -293,7 +297,6 @@ class MainWindow(QMainWindow):
             # If the query get any results, store them in a new temporary collection
             col_name = f"{collection_name}_daterange"
             if docs.count() > 0:
-                col_manager = query_col.store_results_in_collection(col_name)
                 query_col = self.__update_query_collection(
                     col_name, docs)
 
@@ -309,7 +312,6 @@ class MainWindow(QMainWindow):
             # If the query get any results, store them in a new temporary collection
             col_name = f"{collection_name}_date"
             if docs.count() > 0:
-                col_manager = query_col.store_results_in_collection(col_name)
                 query_col = self.__update_query_collection(
                     col_name, docs)
 
@@ -325,7 +327,6 @@ class MainWindow(QMainWindow):
             # if the query results any document, store them in a new temporary collection
             col_name = f"{collection_name}_user"
             if docs.count() > 0:
-                col_manager = query_col.store_results_in_collection(col_name)
                 query_col = self.__update_query_collection(
                     col_name, docs)
 
@@ -341,7 +342,6 @@ class MainWindow(QMainWindow):
             # If the query got any result, store them in a new temporary collection
             col_name = f"{collection_name}_hashtag"
             if docs.count() > 0:
-                col_manager = query_col.store_results_in_collection(col_name)
                 query_col = self.__update_query_collection(
                     col_name, docs)
 
@@ -354,15 +354,14 @@ class MainWindow(QMainWindow):
             # if the query get any results, store them in a new temporary collection
             col_name = f"{collection_name}_nort"
             if docs.count() > 0:
-                col_manager = query_col.store_results_in_collection(col_name)
                 query_col = self.__update_query_collection(
                     col_name, docs)
 
         # If the last query got any results, remove all temporary collection, and store the latest results in a new collection
         if docs.count() > 0:
             # Load documents in the final collection
-            col_manager = query_col.clone_collection_to_another(
-                collection_name)
+            col_manager = self.db_manager.clone_collection_to_another(col_name,
+                                                                      collection_name)
             self.__update_query_collection(collection_name, docs)
 
             # Show sucess status in the interface
