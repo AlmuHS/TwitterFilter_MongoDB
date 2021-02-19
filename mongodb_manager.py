@@ -62,15 +62,13 @@ class DBManager:
 
         return col_manager
 
-    def show_collections_list(self):
+    def get_collections_list(self):
         collection_list = self.db.list_collection_names()
 
         return collection_list
 
     def remove_collection(self, collection_name: str):
-        #response = self.db.drop_collection(collection_name)
-        collection = self.db[collection_name]
-        response = collection.drop()
+        response = self.db.drop_collection(collection_name)
         print(response)
 
 
@@ -85,7 +83,7 @@ if __name__ == "__main__":
 
     #col_manager = db_manager.get_collection_manager(collection_name)
 
-    col_manager = db_manager.load_collection_from_bson(
+    col_manager = db_manager.load_collection_from_file(
         "colecciones_raw/examenes.txt", "examenes")
 
     col_query = col_manager.get_query()
@@ -111,4 +109,4 @@ if __name__ == "__main__":
     # db_manager.remove_collection("twitter_arduinos_filtered_keywords")
     # db_manager.remove_collection("twitter_arduinos_filtered_hashtag")
 
-    print(db_manager.show_collections_list())
+    print(db_manager.get_collections_list())
