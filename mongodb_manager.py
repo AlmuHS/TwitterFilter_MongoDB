@@ -5,7 +5,7 @@ import time
 import pymongo
 from pymongo import MongoClient
 
-from collection_manager import *
+from collection_manager import CollectionManager
 
 
 class DBManager:
