@@ -37,15 +37,28 @@ class Ui_MainWindow(QWidget):
         self.search_pushButton.setObjectName("pushButton")
 
         self.reset_pushButton = QtWidgets.QPushButton(self.centralwidget)
-        self.reset_pushButton.setGeometry(QtCore.QRect(250, 400, 88, 27))
+        self.reset_pushButton.setGeometry(QtCore.QRect(250, 400, 120, 27))
         self.reset_pushButton.setObjectName("pushButton")
 
         self.collection_comboBox = QtWidgets.QComboBox(self.centralwidget)
-        self.collection_comboBox.setGeometry(QtCore.QRect(140, 50, 215, 27))
+        self.collection_comboBox.setGeometry(QtCore.QRect(140, 60, 215, 30))
         self.collection_comboBox.setObjectName("collection_comboBox")
         self.collections_label = QtWidgets.QLabel(self.centralwidget)
-        self.collections_label.setGeometry(QtCore.QRect(50, 50, 91, 19))
+        self.collections_label.setGeometry(QtCore.QRect(50, 60, 91, 22))
         self.collections_label.setObjectName("collections_label")
+        self.stats_pushButton = QtWidgets.QPushButton(self.centralwidget)
+        self.stats_pushButton.setGeometry(QtCore.QRect(360, 60, 151, 30))
+        self.stats_pushButton.setObjectName("stats_pushButton")
+
+        self.db_plainTextEdit = QtWidgets.QPlainTextEdit(self.centralwidget)
+        self.db_plainTextEdit.setGeometry(QtCore.QRect(140, 20, 215, 30))
+        self.db_plainTextEdit.setObjectName("user_plainTextEdit")
+        self.db_label = QtWidgets.QLabel(self.centralwidget)
+        self.db_label.setGeometry(QtCore.QRect(30, 20, 215, 30))
+        self.db_label.setObjectName("collections_label")
+        self.db_pushButton = QtWidgets.QPushButton(self.centralwidget)
+        self.db_pushButton.setGeometry(QtCore.QRect(360, 20, 151, 30))
+        self.db_pushButton.setObjectName("stats_pushButton")
 
         self.daterange_RadioButton = QtWidgets.QRadioButton(self.centralwidget)
         self.daterange_RadioButton.setGeometry(QtCore.QRect(150, 190, 131, 25))
@@ -91,6 +104,7 @@ class Ui_MainWindow(QWidget):
         self.dateEdit_exact.setGeometry(QtCore.QRect(380, 230, 110, 28))
         self.dateEdit_exact.setObjectName("dateEdit_exact")
         self.dateEdit_exact.setDisplayFormat("dd/MM/yyyy")
+
         self.user_plainTextEdit = QtWidgets.QPlainTextEdit(self.centralwidget)
         self.user_plainTextEdit.setGeometry(QtCore.QRect(380, 270, 180, 31))
         self.user_plainTextEdit.setObjectName("user_plainTextEdit")
@@ -98,9 +112,6 @@ class Ui_MainWindow(QWidget):
             self.centralwidget)
         self.hashtag_plainTextEdit.setGeometry(QtCore.QRect(380, 310, 180, 31))
         self.hashtag_plainTextEdit.setObjectName("hashtag_plainTextEdit")
-        self.stats_pushButton = QtWidgets.QPushButton(self.centralwidget)
-        self.stats_pushButton.setGeometry(QtCore.QRect(360, 50, 151, 27))
-        self.stats_pushButton.setObjectName("stats_pushButton")
         self.results_TextBrowser = QtWidgets.QTextBrowser(self.centralwidget)
         self.results_TextBrowser.setGeometry(QtCore.QRect(40, 490, 671, 271))
         self.results_TextBrowser.setText("")
@@ -129,8 +140,13 @@ class Ui_MainWindow(QWidget):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.search_pushButton.setText(_translate("MainWindow", "Buscar"))
-        self.reset_pushButton.setText(_translate("MainWindow", "Reset"))
+        self.reset_pushButton.setText(
+            _translate("MainWindow", "Borrar filtros"))
+        self.db_pushButton.setText(
+            _translate("MainWindow", "Acceder"))
         self.collections_label.setText(_translate("MainWindow", "Colecciones"))
+        self.db_label.setText(
+            _translate("MainWindow", "Base de Datos"))
         self.daterange_RadioButton.setText(
             _translate("MainWindow", "Rango de fechas"))
         self.keywords_label.setText(_translate("MainWindow", "Palabras clave"))
@@ -153,19 +169,24 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        self._connect()
-        self._update_col_ComboBox()
-
         self.ui.stats_pushButton.clicked.connect(self._get_collection_stats)
         self.ui.search_pushButton.clicked.connect(self._filter_tweets)
         self.ui.reset_pushButton.clicked.connect(self._update_ui)
+        self.ui.db_pushButton.clicked.connect(self._connect)
 
         self.ui.dateEdit_start.setMinimumDate(QDate(2006, 3, 1))
         self.ui.dateEdit_end.setMinimumDate(QDate(2006, 3, 1))
         self.ui.dateEdit_exact.setMinimumDate(QDate(2006, 3, 1))
 
     def _connect(self):
-        self.db_manager = MDBMan.DBManager('twitter_downloads')
+        database = self.ui.db_plainTextEdit.toPlainText()
+
+        if not database:
+            self.db_manager = MDBMan.DBManager('twitter_downloads')
+        else:
+            self.db_manager = MDBMan.DBManager(database)
+
+        self._update_col_ComboBox()
 
     '''
     Update combobox contents with the new lists of collections from database
@@ -201,23 +222,6 @@ class MainWindow(QMainWindow):
         # Show text in the interface
         self.ui.results_TextBrowser.setText(stats_str)
 
-    '''
-    Prepare a new collection to send queries
-    '''
-
-    def __update_query_collection(self, collection_name: str, docs):
-        col_manager = self.db_manager.load_collection_from_cursor(
-            docs, collection_name)
-
-        # If the collection has not a text index, create it
-        if not col_manager.check_text_index("full_text"):
-            col_manager.create_text_index("full_text")
-
-        # Get query tool from the new collection
-        query_col = col_manager.get_query()
-
-        return query_col
-
     def _disable_radiobuttons(self):
         self.ui.group_rb.setExclusive(False)
         self.ui.date_RadioButton.setChecked(False)
@@ -239,6 +243,23 @@ class MainWindow(QMainWindow):
         self._disable_radiobuttons()
         self._disable_checkboxes()
         self._clean_textedit()
+
+    '''
+    Generate a new collection, and prepare it to send queries
+    '''
+
+    def __update_query_collection(self, collection_name: str, docs):
+        col_manager = self.db_manager.load_collection_from_cursor(
+            docs, collection_name)
+
+        # If the collection has not a text index, create it
+        if not col_manager.check_text_index("full_text"):
+            col_manager.create_text_index("full_text")
+
+        # Get query tool from the new collection
+        query_col = col_manager.get_query()
+
+        return query_col
 
     '''
     Remove all temporary collections from the database
