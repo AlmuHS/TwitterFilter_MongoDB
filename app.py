@@ -50,9 +50,9 @@ class Ui_MainWindow(QWidget):
         self.stats_pushButton.setGeometry(QtCore.QRect(360, 60, 151, 30))
         self.stats_pushButton.setObjectName("stats_pushButton")
 
-        self.db_plainTextEdit = QtWidgets.QPlainTextEdit(self.centralwidget)
-        self.db_plainTextEdit.setGeometry(QtCore.QRect(140, 20, 215, 30))
-        self.db_plainTextEdit.setObjectName("user_plainTextEdit")
+        self.db_ComboBox = QtWidgets.QComboBox(self.centralwidget)
+        self.db_ComboBox.setGeometry(QtCore.QRect(140, 20, 215, 30))
+        self.db_ComboBox.setObjectName("user_plainTextEdit")
         self.db_label = QtWidgets.QLabel(self.centralwidget)
         self.db_label.setGeometry(QtCore.QRect(30, 20, 215, 30))
         self.db_label.setObjectName("collections_label")
@@ -174,19 +174,48 @@ class MainWindow(QMainWindow):
         self.ui.reset_pushButton.clicked.connect(self._update_ui)
         self.ui.db_pushButton.clicked.connect(self._connect)
 
+        self.ui.search_pushButton.setEnabled(False)
+        self.ui.reset_pushButton.setEnabled(False)
+        self.ui.stats_pushButton.setEnabled(False)
+
         self.ui.dateEdit_start.setMinimumDate(QDate(2006, 3, 1))
         self.ui.dateEdit_end.setMinimumDate(QDate(2006, 3, 1))
         self.ui.dateEdit_exact.setMinimumDate(QDate(2006, 3, 1))
 
+        self._connect_instance()
+
+    def _connect_instance(self):
+        self.mdb_manager = MDBMan.MongoManager('localhost')
+        self._update_db_ComboBox()
+
     def _connect(self):
-        database = self.ui.db_plainTextEdit.toPlainText()
+        database = self.ui.db_ComboBox.currentText()
 
         if not database:
-            self.db_manager = MDBMan.DBManager('twitter_downloads')
+            self.db_manager = self.mdb_manager.get_db_manager(
+                'twitter_downloads')
         else:
-            self.db_manager = MDBMan.DBManager(database)
+            self.db_manager = self.mdb_manager.get_db_manager(database)
 
         self._update_col_ComboBox()
+        self.ui.search_pushButton.setEnabled(True)
+        self.ui.reset_pushButton.setEnabled(True)
+        self.ui.stats_pushButton.setEnabled(True)
+
+    '''
+    Update combobox contents with the new lists of databases from MongoDB instance
+    '''
+
+    def _update_db_ComboBox(self):
+
+        # Read list of collections existents in the database
+        db_list = self.mdb_manager.get_db_list()
+
+        # Remove all contents of combobox
+        self.ui.db_ComboBox.clear()
+
+        # Fill combobox with the new list of collections
+        self.ui.db_ComboBox.addItems(db_list)
 
     '''
     Update combobox contents with the new lists of collections from database

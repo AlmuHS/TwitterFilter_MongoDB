@@ -8,25 +8,37 @@ from pymongo import MongoClient
 from collection_manager import CollectionManager
 
 
-class DBManager:
-    def __init__(self, db_name: str):
-        self.db_name = db_name
-        self.db = self.connect('localhost', db_name)
+class MongoManager:
+    def __init__(self, domain):
+        self.connect(domain)
+        self.domain = domain
 
-    def connect(self, domain: str, db_name: str):
+    def connect(self, domain: str):
         self.client = MongoClient(domain, 27017)
-        db = self.client[db_name]
 
-        return db
+    def get_db_list(self):
+        db_list = self.client.list_database_names()
+
+        return db_list
+
+    def get_db_manager(self, db_name: str):
+        db = self.client[db_name]
+        db_manager = DBManager(db)
+
+        return db_manager
 
     def disconnect(self):
         self.client.close()
 
     def reconnect(self):
         self.client.close()
-        self.db = self.connect('localhost', self.db_name)
+        self.connect(self.domain)
 
-        return self
+
+class DBManager:
+    def __init__(self, db: pymongo.database):
+        self.db = db
+        self.db_name = self.db.name
 
     def load_collection_from_file(self, filename: str, collection_name: str):
         collection = self.db[collection_name]
@@ -88,9 +100,12 @@ if __name__ == "__main__":
     # create_index_in_collection("twitter_examenes", "full_text")
     # results = find_docs_by_keywords("twitter_examenes", ["examen", "parcial"])
     # results = find_docs_by_date("twitter_examenes", '27-01-2021')
+    MDB_man = MongoManager('localhost')
+    print(MDB_man.get_db_list())
+
     db_manager = DBManager('twitter_downloads')
 
-    #col_manager = db_manager.get_collection_manager(collection_name)
+    # col_manager = db_manager.get_collection_manager(collection_name)
 
     col_manager = db_manager.load_collection_from_file(
         "colecciones_raw/examenes.txt", "examenes")
@@ -111,7 +126,7 @@ if __name__ == "__main__":
 
     print(all_stats)
 
-    #docs = col_query.find_docs_by_keywords("examenes")
+    # docs = col_query.find_docs_by_keywords("examenes")
     # print(docs.count())
 
     # db_manager.remove_collection("twitter_arduinos_filtered_nort")
