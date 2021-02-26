@@ -9,7 +9,7 @@ from collection_manager import CollectionManager
 
 
 class MongoManager:
-    def __init__(self, domain):
+    def __init__(self, domain: str):
         self.connect(domain)
         self.domain = domain
 
@@ -38,7 +38,6 @@ class MongoManager:
 class DBManager:
     def __init__(self, db: pymongo.database):
         self.db = db
-        self.db_name = self.db.name
 
     def load_collection_from_file(self, filename: str, collection_name: str):
         collection = self.db[collection_name]
