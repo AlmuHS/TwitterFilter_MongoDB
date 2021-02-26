@@ -16,6 +16,7 @@ from PyQt5.QtWidgets import QWidget, QApplication, QMainWindow, QHBoxLayout, QBu
 import sys
 import re
 from datetime import datetime
+import time
 
 
 class Ui_MainWindow(QWidget):
@@ -268,7 +269,6 @@ class MainWindow(QMainWindow):
         self.ui.kwplainTextEdit.setPlainText("")
 
     def _update_ui(self):
-        self._update_col_ComboBox()
         self._disable_radiobuttons()
         self._disable_checkboxes()
         self._clean_textedit()
@@ -424,6 +424,9 @@ class MainWindow(QMainWindow):
             # Show sucess status in the interface
             self.ui.status_label.setText("Exito")
 
+            # Remove all filters
+            self._update_ui()
+
         # If the last query got zero results, remove all temporary collections, and show message "No results" in the interface
         else:
             self.ui.status_label.setText("Sin resultados")
@@ -431,11 +434,8 @@ class MainWindow(QMainWindow):
         # Remove all temporary collections
         self.__remove_temporary_collections(collection)
 
-        # Update combobox with the new collections
-        self._update_col_ComboBox()
-
-        # Uncheck radiobuttons
-        self._update_ui()
+        time.sleep(20)
+        self._update_db_ComboBox()
 
 
 if __name__ == "__main__":
