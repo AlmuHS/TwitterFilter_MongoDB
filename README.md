@@ -1,4 +1,4 @@
-# Proyecto MongoDB
+# TwitterFilter MongoDB
 
 ## Autora: Almudena García Jurado-Centurión
 
